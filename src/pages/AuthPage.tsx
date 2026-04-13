@@ -33,8 +33,8 @@ export function AuthPage() {
       <div className="max-w-sm w-full">
         {/* Logo / Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600/20 rounded-2xl mb-4">
-            <span className="i-lucide-book-open text-3xl text-indigo-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-600/20 rounded-2xl mb-4">
+            <span className="i-lucide-book-open text-3xl text-amber-400" />
           </div>
           <h1 className="text-2xl font-bold text-stone-100">D&D Docs</h1>
           <p className="text-stone-500 mt-1 text-sm">Your campaign documentation hub</p>
@@ -97,7 +97,7 @@ export function AuthPage() {
             <button
               type="button"
               onClick={() => { setIsSignUp(!isSignUp); setError(null); setMessage(null) }}
-              className="text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="text-amber-400 hover:text-amber-300 transition-colors"
             >
               {isSignUp ? 'Sign In' : 'Sign Up'}
             </button>

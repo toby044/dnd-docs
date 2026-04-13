@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
+import { DiceRoller } from '@/components/DiceRoller'
 import {
   DndContext,
   closestCenter,
@@ -37,6 +38,7 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false)
   const [showTrash, setShowTrash] = useState(false)
   const [showNewMenu, setShowNewMenu] = useState(false)
+  const [showDiceRoller, setShowDiceRoller] = useState(false)
 
   const deleteTargetPage = deleteTarget ? pages.find(p => p.id === deleteTarget) : null
 
@@ -166,7 +168,7 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
         {/* Header */}
         <div className="p-3 border-b border-stone-700 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="i-lucide-book-open text-indigo-400 text-lg" />
+            <span className="i-lucide-book-open text-amber-400 text-lg" />
             <h1 className="text-lg font-semibold text-stone-100">DNDocs</h1>
           </div>
           <div className="relative">
@@ -263,18 +265,32 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
 
         {/* Footer */}
         <div className="p-2 border-t border-stone-700 flex items-center justify-between">
-          <button
-            onClick={() => setShowTrash(true)}
-            className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-stone-500 hover:bg-stone-800 hover:text-stone-300 transition-colors"
-          >
-            <span className="i-lucide-trash-2 text-xs" />
-            Trash
-            {trashedPages.length > 0 && (
-              <span className="bg-stone-700 text-stone-400 px-1.5 py-0.5 rounded-full text-xs leading-none">
-                {trashedPages.length}
-              </span>
-            )}
-          </button>
+          <div className="flex items-center gap-0.5">
+            <button
+              onClick={() => setShowTrash(true)}
+              className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-stone-500 hover:bg-stone-800 hover:text-stone-300 transition-colors"
+            >
+              <span className="i-lucide-trash-2 text-xs" />
+              Trash
+              {trashedPages.length > 0 && (
+                <span className="bg-stone-700 text-stone-400 px-1.5 py-0.5 rounded-full text-xs leading-none">
+                  {trashedPages.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setShowDiceRoller(d => !d)}
+              title="Dice Roller"
+              className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs transition-colors ${
+                showDiceRoller
+                  ? 'bg-amber-600/20 text-amber-400'
+                  : 'text-stone-500 hover:bg-stone-800 hover:text-stone-300'
+              }`}
+            >
+              <span>🎲</span>
+              Dice
+            </button>
+          </div>
           <button
             onClick={() => setShowSignOutConfirm(true)}
             className="flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs text-stone-500 hover:bg-stone-800 hover:text-stone-300 transition-colors"
@@ -284,6 +300,8 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
           </button>
         </div>
       </aside>
+
+      {showDiceRoller && <DiceRoller onClose={() => setShowDiceRoller(false)} />}
 
       {deleteTargetPage && (
         <DeleteConfirm
@@ -296,19 +314,10 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
       <TrashPanel open={showTrash} onClose={() => setShowTrash(false)} />
 
       {showSignOutConfirm && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => setShowSignOutConfirm(false)}>
-          <div
-            className="bg-stone-800 border border-stone-600 rounded-xl p-6 max-w-xs w-full mx-4 shadow-2xl"
-            onClick={e => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-stone-100 mb-2">Sign Out</h3>
-            <p className="text-stone-400 text-sm mb-6">Are you sure you want to sign out?</p>
-            <div className="flex gap-3 justify-end">
-              <button onClick={() => setShowSignOutConfirm(false)} className="btn-ghost text-sm">Cancel</button>
-              <button onClick={() => { setShowSignOutConfirm(false); signOut() }} className="btn-primary text-sm">Sign Out</button>
-            </div>
-          </div>
-        </div>
+        <SignOutConfirmModal
+          onConfirm={() => { setShowSignOutConfirm(false); signOut() }}
+          onCancel={() => setShowSignOutConfirm(false)}
+        />
       )}
     </>
   )
@@ -377,9 +386,6 @@ function TreeNode({
         isSection={isSection}
         onToggle={() => setExpanded(!expanded)}
         onClick={() => {
-          if (isSection) {
-            setExpanded(!expanded)
-          }
           onNavigate(node.id)
         }}
         onAddChild={handleAddChild}
@@ -442,4 +448,28 @@ function flattenTree(nodes: PageTreeNode[]): string[] {
     result.push(...flattenTree(node.children))
   }
   return result
+}
+
+function SignOutConfirmModal({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onCancel() }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
+
+  return (
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onCancel}>
+      <div
+        className="bg-stone-800 border border-stone-600 rounded-xl p-6 max-w-xs w-full mx-4 shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-semibold text-stone-100 mb-2">Sign Out</h3>
+        <p className="text-stone-400 text-sm mb-6">Are you sure you want to sign out?</p>
+        <div className="flex gap-3 justify-end">
+          <button onClick={onCancel} className="btn-ghost text-sm">Cancel</button>
+          <button onClick={onConfirm} className="btn-primary text-sm">Sign Out</button>
+        </div>
+      </div>
+    </div>
+  )
 }

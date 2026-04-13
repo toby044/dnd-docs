@@ -89,7 +89,7 @@ export function SearchModal({ open, onClose, onNavigate }: SearchModalProps) {
                 onMouseEnter={() => setSelectedIndex(i)}
                 className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2.5 transition-colors ${
                   i === selectedIndex
-                    ? 'bg-indigo-600/20 text-indigo-300'
+                    ? 'bg-amber-600/20 text-amber-300'
                     : 'text-stone-300 hover:bg-stone-700/50'
                 }`}
               >

@@ -32,10 +32,10 @@ function createSuggestion(
         const buttons = popup.querySelectorAll('[data-suggestion-item]')
         buttons.forEach((btn, i) => {
           if (i === selectedIndex) {
-            btn.classList.add('bg-indigo-600/30', 'text-indigo-300')
+            btn.classList.add('bg-amber-600/30', 'text-amber-300')
             btn.classList.remove('text-stone-300')
           } else {
-            btn.classList.remove('bg-indigo-600/30', 'text-indigo-300')
+            btn.classList.remove('bg-amber-600/30', 'text-amber-300')
             btn.classList.add('text-stone-300')
           }
         })

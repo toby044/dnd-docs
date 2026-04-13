@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 interface DeleteConfirmProps {
   title: string
   onConfirm: () => void
@@ -5,6 +7,14 @@ interface DeleteConfirmProps {
 }
 
 export function DeleteConfirm({ title, onConfirm, onCancel }: DeleteConfirmProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={onCancel}>
       <div

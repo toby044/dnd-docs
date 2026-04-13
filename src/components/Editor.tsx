@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Highlight from '@tiptap/extension-highlight'
@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { EditorToolbar } from '@/components/EditorToolbar'
 import { pageReferenceSuggestion } from '@/lib/pageReferenceSuggestion'
+import { StatBlock } from '@/lib/statBlockExtension'
 
 interface EditorProps {
   pageId: string
@@ -20,14 +21,27 @@ interface EditorProps {
 
 const AUTOSAVE_INTERVAL_MS = 30_000
 
+type SaveState = 'saved' | 'unsaved' | 'saving'
+
 export function Editor({ pageId, onNavigate }: EditorProps) {
   const { pages, updatePage } = usePages()
   const { user } = useAuth()
   const page = pages.find(p => p.id === pageId)
   const pendingContentRef = useRef<Record<string, unknown> | null>(null)
-  // Always hold the latest updatePage without adding it as an interval dep
   const updatePageRef = useRef(updatePage)
   useEffect(() => { updatePageRef.current = updatePage }, [updatePage])
+
+  const [saveState, setSaveState] = useState<SaveState>('saved')
+
+  // Always-fresh save function via ref so effects don't go stale
+  const saveRef = useRef<() => void>(() => {})
+  saveRef.current = () => {
+    if (!pendingContentRef.current) return
+    setSaveState('saving')
+    updatePageRef.current(pageId, { content: pendingContentRef.current })
+    pendingContentRef.current = null
+    setTimeout(() => setSaveState('saved'), 800)
+  }
 
   const editor = useEditor({
     extensions: [
@@ -50,12 +64,14 @@ export function Editor({ pageId, onNavigate }: EditorProps) {
       Image.configure({
         HTMLAttributes: { class: 'editor-image' },
       }),
+      StatBlock,
     ],
     content: page?.content && Object.keys(page.content).length > 0
       ? page.content
       : '<p></p>',
     onUpdate: ({ editor: ed }) => {
       pendingContentRef.current = ed.getJSON() as Record<string, unknown>
+      setSaveState('unsaved')
     },
     editorProps: {
       attributes: {
@@ -102,7 +118,7 @@ export function Editor({ pageId, onNavigate }: EditorProps) {
     },
   })
 
-  // Navigate on @mention click — flush current page first
+  // Navigate on @mention click
   useEffect(() => {
     if (!editor) return
     const dom = editor.view.dom
@@ -111,34 +127,36 @@ export function Editor({ pageId, onNavigate }: EditorProps) {
       if (!mention) return
       const targetId = mention.getAttribute('data-id')
       if (!targetId) return
-      if (pendingContentRef.current) {
-        updatePageRef.current(pageId, { content: pendingContentRef.current })
-        pendingContentRef.current = null
-      }
+      saveRef.current()
       onNavigate(targetId)
     }
     dom.addEventListener('click', handleClick)
     return () => dom.removeEventListener('click', handleClick)
-  }, [editor, pageId, onNavigate])
+  }, [editor, onNavigate])
 
-  // 30s autosave — flush pending content periodically, on page-switch, and on tab close
+  // Autosave + flush on unmount/tab close
   useEffect(() => {
-    const flush = () => {
-      if (pendingContentRef.current) {
-        updatePageRef.current(pageId, { content: pendingContentRef.current })
-        pendingContentRef.current = null
-      }
-    }
-
-    const interval = setInterval(flush, AUTOSAVE_INTERVAL_MS)
-    window.addEventListener('beforeunload', flush)
-
+    const interval = setInterval(() => saveRef.current(), AUTOSAVE_INTERVAL_MS)
+    const beforeUnload = () => saveRef.current()
+    window.addEventListener('beforeunload', beforeUnload)
     return () => {
       clearInterval(interval)
-      window.removeEventListener('beforeunload', flush)
-      flush() // save on page navigation (Editor unmounts due to key={pageId})
+      window.removeEventListener('beforeunload', beforeUnload)
+      saveRef.current()
     }
   }, [pageId])
+
+  // Cmd+S
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+        e.preventDefault()
+        saveRef.current()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   // Sync editor content when page changes
   useEffect(() => {
@@ -166,6 +184,11 @@ export function Editor({ pageId, onNavigate }: EditorProps) {
     input.click()
   }, [editor, user?.id])
 
+  const handleInsertStatBlock = useCallback(() => {
+    if (!editor) return
+    editor.chain().focus().insertStatBlock().run()
+  }, [editor])
+
   if (!page) {
     return (
       <div className="flex-1 flex items-center justify-center text-stone-500">
@@ -180,10 +203,43 @@ export function Editor({ pageId, onNavigate }: EditorProps) {
   return (
     <div className="flex-1 overflow-y-auto">
       <div className="max-w-4xl mx-auto px-8 py-6">
-        {editor && <EditorToolbar editor={editor} onImageUpload={handleImageUpload} />}
+        {editor && (
+          <div className="flex items-start gap-2">
+            <div className="flex-1">
+              <EditorToolbar
+                editor={editor}
+                onImageUpload={handleImageUpload}
+                onInsertStatBlock={handleInsertStatBlock}
+              />
+            </div>
+            <SaveButton state={saveState} onSave={() => saveRef.current()} />
+          </div>
+        )}
         <EditorContent editor={editor} className="mt-4" />
       </div>
     </div>
+  )
+}
+
+function SaveButton({ state, onSave }: { state: SaveState; onSave: () => void }) {
+  return (
+    <button
+      onClick={onSave}
+      disabled={state === 'saved' || state === 'saving'}
+      title="Save (⌘S)"
+      className={`shrink-0 mt-0.5 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+        state === 'unsaved'
+          ? 'bg-amber-600 text-stone-900 hover:bg-amber-500 cursor-pointer'
+          : state === 'saving'
+          ? 'bg-stone-700 text-stone-400 cursor-not-allowed'
+          : 'bg-transparent text-stone-600 cursor-default'
+      }`}
+    >
+      {state === 'saving' && <span className="i-lucide-loader-2 animate-spin text-xs" />}
+      {state === 'saved' && <span className="i-lucide-check text-xs" />}
+      {state === 'unsaved' && <span className="i-lucide-save text-xs" />}
+      {state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : 'Save'}
+    </button>
   )
 }
 

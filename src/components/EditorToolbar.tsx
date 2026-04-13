@@ -3,9 +3,10 @@ import type { Editor } from '@tiptap/react'
 interface EditorToolbarProps {
   editor: Editor
   onImageUpload: () => void
+  onInsertStatBlock: () => void
 }
 
-export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
+export function EditorToolbar({ editor, onImageUpload, onInsertStatBlock }: EditorToolbarProps) {
   const items = [
     {
       icon: 'i-lucide-bold',
@@ -95,6 +96,13 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
       action: () => onImageUpload(),
       isActive: () => false,
     },
+    { type: 'divider' as const },
+    {
+      icon: 'i-lucide-shield',
+      title: 'Insert Stat Block',
+      action: () => onInsertStatBlock(),
+      isActive: () => false,
+    },
   ]
 
   return (
@@ -111,7 +119,7 @@ export function EditorToolbar({ editor, onImageUpload }: EditorToolbarProps) {
             title={btn.title}
             className={`w-8 h-8 flex items-center justify-center rounded transition-colors ${
               btn.isActive()
-                ? 'bg-indigo-600/30 text-indigo-300'
+                ? 'bg-amber-600/30 text-amber-300'
                 : 'text-stone-400 hover:bg-stone-700 hover:text-stone-200'
             }`}
           >

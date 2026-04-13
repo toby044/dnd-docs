@@ -114,7 +114,7 @@ export function SidebarItem({
         style={style}
         className={`group relative flex items-center gap-1 py-2 pr-2 rounded-md text-xs cursor-pointer transition-colors ${
           isDropTarget
-            ? 'bg-indigo-600/30 ring-1 ring-indigo-500/50'
+            ? 'bg-amber-600/30 ring-1 ring-amber-500/50'
             : 'text-stone-500 hover:bg-stone-800/50 hover:text-stone-400'
         } ${depth === 0 ? 'mt-3 first:mt-0' : ''}`}
         onClick={isRenaming ? undefined : onClick}
@@ -143,7 +143,7 @@ export function SidebarItem({
             onBlur={handleRenameSubmit}
             onKeyDown={handleRenameKeyDown}
             onClick={e => e.stopPropagation()}
-            className="flex-1 min-w-0 bg-stone-800 border border-indigo-500 rounded px-1.5 py-0.5 text-sm text-stone-100 focus:outline-none"
+            className="flex-1 min-w-0 bg-stone-800 border border-amber-500 rounded px-1.5 py-0.5 text-sm text-stone-100 focus:outline-none"
           />
         ) : (
           <span className="flex-1 truncate font-semibold uppercase tracking-wider">{title || 'Untitled Section'}</span>
@@ -246,9 +246,9 @@ export function SidebarItem({
       style={style}
       className={`group relative flex items-center gap-1 py-1.5 pr-2 rounded-md text-sm cursor-pointer transition-colors ${
         isDropTarget
-          ? 'bg-indigo-600/30 ring-1 ring-indigo-500/50'
+          ? 'bg-amber-600/30 ring-1 ring-amber-500/50'
           : isActive
-            ? 'bg-indigo-600/20 text-indigo-300'
+            ? 'bg-amber-600/20 text-amber-300'
             : 'text-stone-400 hover:bg-stone-800 hover:text-stone-200'
       }`}
       onClick={isRenaming ? undefined : onClick}
@@ -277,7 +277,7 @@ export function SidebarItem({
           onBlur={handleRenameSubmit}
           onKeyDown={handleRenameKeyDown}
           onClick={e => e.stopPropagation()}
-          className="flex-1 min-w-0 bg-stone-800 border border-indigo-500 rounded px-1.5 py-0.5 text-sm text-stone-100 focus:outline-none"
+          className="flex-1 min-w-0 bg-stone-800 border border-amber-500 rounded px-1.5 py-0.5 text-sm text-stone-100 focus:outline-none"
         />
       ) : (
         <span className="flex-1 truncate">{title || 'Untitled'}</span>
