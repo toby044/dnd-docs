@@ -20,6 +20,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { SidebarItem } from '@/components/SidebarItem'
 import { DeleteConfirm } from '@/components/DeleteConfirm'
 import { TrashPanel } from '@/components/TrashPanel'
+import { TemplateModal } from '@/components/TemplateModal'
+import type { Template } from '@/lib/templates'
 import type { PageTreeNode } from '@/types/database'
 
 interface SidebarProps {
@@ -39,6 +41,7 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
   const [showTrash, setShowTrash] = useState(false)
   const [showNewMenu, setShowNewMenu] = useState(false)
   const [showDiceRoller, setShowDiceRoller] = useState(false)
+  const [showTemplateModal, setShowTemplateModal] = useState(false)
 
   const deleteTargetPage = deleteTarget ? pages.find(p => p.id === deleteTarget) : null
 
@@ -74,6 +77,16 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
     const page = await createPage(null)
     if (page) onNavigate(page.id)
   }, [createPage, onNavigate])
+
+  const handleSelectTemplate = useCallback(async (template: Template | null) => {
+    setShowTemplateModal(false)
+    const page = await createPage(null)
+    if (!page) return
+    if (template) {
+      await updatePage(page.id, { title: template.name, icon: template.icon, content: template.content })
+    }
+    onNavigate(page.id)
+  }, [createPage, updatePage, onNavigate])
 
   const handleCreateSection = useCallback(async () => {
     const section = await createSection()
@@ -190,6 +203,13 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
                   <kbd className="ml-auto text-xs bg-stone-700 px-1 py-0.5 rounded border border-stone-600 text-stone-500">⌘N</kbd>
                 </button>
                 <button
+                  onClick={() => { setShowNewMenu(false); setShowTemplateModal(true) }}
+                  className="w-full text-left px-3 py-1.5 text-sm text-stone-300 hover:bg-stone-700 flex items-center gap-2"
+                >
+                  <span className="i-lucide-layout-template text-xs" />
+                  From Template…
+                </button>
+                <button
                   onClick={handleCreateSection}
                   className="w-full text-left px-3 py-1.5 text-sm text-stone-300 hover:bg-stone-700 flex items-center gap-2"
                 >
@@ -302,6 +322,13 @@ export function Sidebar({ activePageId, onNavigate, onOpenSearch }: SidebarProps
       </aside>
 
       {showDiceRoller && <DiceRoller onClose={() => setShowDiceRoller(false)} />}
+
+      {showTemplateModal && (
+        <TemplateModal
+          onSelect={handleSelectTemplate}
+          onClose={() => setShowTemplateModal(false)}
+        />
+      )}
 
       {deleteTargetPage && (
         <DeleteConfirm
